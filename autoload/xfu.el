@@ -2,15 +2,14 @@
 ;;;###autoload
 (defun dwim-jump ()
   (interactive)
-  (cond ((eq 'org-mode (buffer-local-value 'major-mode (current-buffer)))
-         (counsel-org-goto))
-        ((eq 'org-agenda-mode (buffer-local-value 'major-mode (current-buffer)))
-         (counsel-org-goto-all))
-        ((eq 'latex-mode major-mode)
-         (reftex-toc))
-        ((bound-and-true-p outline-minor-mode)
-         (counsel-oi))
-        (t (counsel-imenu))))
+  (cond
+   ((eq 'org-agenda-mode (buffer-local-value 'major-mode (current-buffer)))
+    (counsel-org-goto-all))
+   ((eq 'latex-mode major-mode)
+    (reftex-toc))
+   ((bound-and-true-p outline-minor-mode)
+    (counsel-outline))
+   (t (counsel-imenu))))
 
 ;;;###autoload
 (defun mac-iTerm-shell-command (text)
@@ -95,25 +94,30 @@
 ;;;###autoload
 (defun highlight-grammar ()
   (interactive)
-  (highlight-regexp "\\\w+s[\\\., ;]" 'hi-yellow))
+  (highlight-regexp " \\\w+s[\\\., ;]" 'hi-yellow)
+  (highlight-regexp " \\\w+ed[\\\., ;]" 'hi-yellow)
+  (highlight-regexp " \\(could\\|can\\|may\\|might\\|would\\|won't\\|cannot\\|can't \\) " 'hi-pink)
+  (highlight-regexp " \\(have been\\|have being\\|has being\\|has been\\|had been\\|had being\\) " 'hi-pink)
+  (highlight-regexp " \\(is\\|are\\|were\\|was\\|being\\|am\\|been\\) " 'hi-blue))
 
 ;;;; Org
 ;;;###autoload
 (defun org-agenda-show-daily (&optional arg)
   (interactive "P")
-  (org-agenda arg "a"))
+  (org-agenda arg "a")
+  (org-agenda-goto-today))
 
-;;;###autoload
-(defun cfw:open-org-calendar-withoutkevin ()
-  (interactive)
-  (let ((org-agenda-files '("~/Dropbox/org/" "~/Dropbox/org/cal/cal.org")))
-    (call-interactively '+calendar/open-calendar)))
+;; ###autoload
+;; (defun cfw:open-org-calendar-withoutkevin ()
+;;   (interactive)
+;;   (let ((org-agenda-files '("~/Dropbox/org/" "~/Dropbox/org/cal/cal.org")))
+;;     (call-interactively '+calendar/open-calendar)))
 
-;;;###autoload
-(defun cfw:open-org-calendar-withkevin ()
-  (interactive)
-  (let ((org-agenda-files '("~/Dropbox/org/" "~/Dropbox/org/cal/")))
-    (call-interactively '+calendar/open-calendar)))
+;; ;;;###autoload
+;; (defun cfw:open-org-calendar-withkevin ()
+;;   (interactive)
+;;   (let ((org-agenda-files '("~/Dropbox/org/" "~/Dropbox/org/cal/")))
+;;     (call-interactively '+calendar/open-calendar)))
 
 ;;;###autoload
 (defun sort-setq-next-record ()
@@ -173,36 +177,6 @@ the workspace and move to the next."
                (funcall delete-window-fn))
               ((cdr (+workspace-list-names))
                (+workspace/delete current-persp-name)))))))
-
-;;;###autoload
-(defun +xfu/browse-private ()
-  (interactive) (doom-project-browse "~/.doom.d/"))
-;;;###autoload
-(defun +xfu/find-in-private ()
-  (interactive) (doom-project-find-file "~/.doom.d/"))
-
-;;;###autoload
-(defun +xfu/browse-playground ()
-  (interactive) (doom-project-browse "~/Source/playground/"))
-;;;###autoload
-(defun +xfu/find-in-playground ()
-  (interactive) (doom-project-find-file "~/Source/playground/"))
-
-;;;###autoload
-(defun +xfu/browse-work ()
-  (interactive) (doom-project-browse "~/Source/work/"))
-;;;###autoload
-(defun +xfu/find-in-work ()
-  (interactive) (doom-project-find-file "~/Source/work/"))
-
-;;;###autoload
-(defun +xfu/browse-snippets ()
-  (interactive) (doom-project-browse "~/.doom.d/snippets/"))
-
-;;;###autoload
-(defun +xfu/find-in-snippets ()
-  (interactive) (doom-project-find-file "~/.doom.d/snippets/"))
-
 
 ;; ;;;###autoload
 ;; (defun +eshell/history ()
@@ -279,28 +253,28 @@ the workspace and move to the next."
           (select-window ori)))))
 
 ;;;###autoload
-(defun counsel-faces ()
-    "Show a list of all defined faces.
+;; (defun counsel-faces ()
+;;     "Show a list of all defined faces.
 
-You can describe, customize, insert or kill the name or selected
-candidate."
-    (interactive)
-    (let* ((minibuffer-allow-text-properties t)
-           (max-length
-            (apply #'max
-                   (mapcar
-                    (lambda (x)
-                      (length (symbol-name x)))
-                    (face-list))))
-           (counsel--faces-fmt (format "%%-%ds  " max-length))
-           (ivy-format-function #'counsel--faces-format-function))
-      (ivy-read "%d Face: " (face-list)
-                :require-match t
-                :action #'counsel-faces-action-describe
-                :preselect (symbol-name (face-at-point t))
-                :history 'counsel-faces-history
-                :caller 'counsel-faces
-                :sort t)))
+;; You can describe, customize, insert or kill the name or selected
+;; candidate."
+;;     (interactive)
+;;     (let* ((minibuffer-allow-text-properties t)
+;;            (max-length
+;;             (apply #'max
+;;                    (mapcar
+;;                     (lambda (x)
+;;                       (length (symbol-name x)))
+;;                     (face-list))))
+;;            (counsel--faces-fmt (format "%%-%ds  " max-length))
+;;            (ivy-format-function #'counsel--faces-format-function))
+;;       (ivy-read "%d Face: " (face-list)
+;;                 :require-match t
+;;                 :action #'counsel-faces-action-describe
+;;                 :preselect (symbol-name (face-at-point t))
+;;                 :history 'counsel-faces-history
+;;                 :caller 'counsel-faces
+;;                 :sort t)))
 
 ;;;###autoload
 (defun +ivy-recentf-transformer (str)
@@ -308,17 +282,6 @@ candidate."
 started `counsel-recentf' from. Also uses `abbreviate-file-name'."
     (abbreviate-file-name str))
 
-;;;###autoload
-(defun +ivy-top ()
-    (interactive)
-    (let* ((output (shell-command-to-string ivy-top-command))
-           (lines (progn
-                    (string-match "TIME" output)
-                    (split-string (substring output (+ 1 (match-end 0))) "\n")))
-           (candidates (mapcar (lambda (line)
-                                 (list line (split-string line " " t)))
-                               lines)))
-      (ivy-read "process: " candidates)))
 
 ;;;###autoload
 (defun +ivy/reloading (cmd)
@@ -588,26 +551,123 @@ redefines its keys every time `eshell-mode' is enabled."
       "\M-d" #'evil-window-vsplit
       "\M-D" #'evil-window-split))
 
-;; *** treemacs
 ;;;###autoload
-(defun +treemacs/toggle ()
-  "Initialize or toggle treemacs.
-* If the treemacs window is visible hide it.
-* If a treemacs buffer exists, but is not visible show it.
-* If no treemacs buffer exists for the current frame create and show it.
-* If the workspace is empty additionally ask for the root path of the first
-  project to add."
-  (interactive)
-  (require 'treemacs)
-  (-pcase (treemacs--current-visibility)
-    ['visible (delete-window (treemacs--is-visible?))]
-    ['exists  (treemacs-select-window)
-              (set-window-fringes (selected-window) 0 0 nil)]
-    ['none
-     (let ((project-root (doom-project-root 'nocache)))
-       (when project-root
-         (unless (treemacs--find-project-for-path project-root)
-           (treemacs-add-project-at (treemacs--canonical-path project-root)
-                                    (doom-project-name 'nocache))))
-       (treemacs--init project-root))
-     (set-window-fringes (selected-window) 0 0 nil)]))
+(defun *pdf-view-mouse-set-region (event &optional allow-extend-p
+                                          rectangle-p)
+    "Select a region of text using the mouse with mouse event EVENT.
+
+Allow for stacking of regions, if ALLOW-EXTEND-P is non-nil.
+
+Create a rectangular region, if RECTANGLE-P is non-nil.
+
+Stores the region in `pdf-view-active-region'."
+    (interactive "@e")
+    (setq pdf-view--have-rectangle-region rectangle-p)
+    (unless (and (eventp event)
+                 (mouse-event-p event))
+      (signal 'wrong-type-argument (list 'mouse-event-p event)))
+    (unless (and allow-extend-p
+                 (or (null (get this-command 'pdf-view-region-window))
+                     (equal (get this-command 'pdf-view-region-window)
+                            (selected-window))))
+      (pdf-view-deactivate-region))
+    (put this-command 'pdf-view-region-window
+         (selected-window))
+    (let* ((window (selected-window))
+           (pos (event-start event))
+           (begin-inside-image-p t)
+           (begin (if (posn-image pos)
+                      (posn-object-x-y pos)
+                    (setq begin-inside-image-p nil)
+                    (posn-x-y pos)))
+           (abs-begin (posn-x-y pos))
+           pdf-view-continuous
+           region)
+      (when (pdf-util-track-mouse-dragging (event 0.005)
+              (let* ((pos (event-start event))
+                     (end (posn-object-x-y pos))
+                     (end-inside-image-p
+                      (and (eq window (posn-window pos))
+                           (posn-image pos))))
+                (when (or end-inside-image-p
+                          begin-inside-image-p)
+                  (cond
+                   ((and end-inside-image-p
+                         (not begin-inside-image-p))
+                    ;; Started selection ouside the image, setup begin.
+                    (let* ((xy (posn-x-y pos))
+                           (dxy (cons (- (car xy) (car begin))
+                                      (- (cdr xy) (cdr begin))))
+                           (size (pdf-view-image-size t)))
+                      (setq begin (cons (max 0 (min (car size)
+                                                    (- (car end) (car dxy))))
+                                        (max 0 (min (cdr size)
+                                                    (- (cdr end) (cdr dxy)))))
+                            ;; Store absolute position for later.
+                            abs-begin (cons (- (car xy)
+                                               (- (car end)
+                                                  (car begin)))
+                                            (- (cdr xy)
+                                               (- (cdr end)
+                                                  (cdr begin))))
+                            begin-inside-image-p t)))
+                   ((and begin-inside-image-p
+                         (not end-inside-image-p))
+                    ;; Moved outside the image, setup end.
+                    (let* ((xy (posn-x-y pos))
+                           (dxy (cons (- (car xy) (car abs-begin))
+                                      (- (cdr xy) (cdr abs-begin))))
+                           (size (pdf-view-image-size t)))
+                      (setq end (cons (max 0 (min (car size)
+                                                  (+ (car begin) (car dxy))))
+                                      (max 0 (min (cdr size)
+                                                  (+ (cdr begin) (cdr dxy)))))))))
+                  (let ((iregion (if rectangle-p
+                                     (list (min (car begin) (car end))
+                                           (min (cdr begin) (cdr end))
+                                           (max (car begin) (car end))
+                                           (max (cdr begin) (cdr end)))
+                                   (list (car begin) (cdr begin)
+                                         (car end) (cdr end)))))
+                    (setq region
+                          (pdf-util-scale-pixel-to-relative iregion))
+
+                    (pdf-util-scroll-to-edges iregion)))))
+        (pdf-view-display-region
+         (cons region pdf-view-active-region)
+         rectangle-p)
+        (setq pdf-view-active-region
+              (append pdf-view-active-region
+                      (list region)))
+        (pdf-view--push-mark))))
+
+;; ###autoload
+;; (after! ivy-hydra
+;;   (with-no-warnings
+;;     (defhydra+ hydra-ivy (:hint nil :color pink)
+;;       "
+;;  Move     ^^^^^^^^^^ | Call         ^^^^ | Cancel^^ | Options^^ | Action _w_/_s_/_a_: %s(ivy-action-name)
+;; ----------^^^^^^^^^^-+--------------^^^^-+-------^^-+--------^^-+---------------------------------
+;;  _g_ ^ ^ _k_ ^ ^ _u_ | _f_orward _o_ccur | _i_nsert | _c_alling: %-7s(if ivy-calling \"on\" \"off\") _C_ase-fold: %-10`ivy-case-fold-search
+;;  ^ ^ _h_ ^+^ _l_ ^ ^ | _RET_ done     ^^ | _q_uit   | _m_atcher: %-7s(ivy--matcher-desc) _t_runcate: %-11`truncate-lines
+;;  _G_ ^ ^ _j_ ^ ^ _d_ | _TAB_ alt-done ^^ | ^ ^      | _<_/_>_: shrink/grow
+;; "
+;;       ;; arrows
+;;       ("l" ivy-alt-done)
+;;       ("h" ivy-backward-delete-char)
+;;       ("g" ivy-beginning-of-buffer)
+;;       ("G" ivy-end-of-buffer)
+;;       ("d" ivy-scroll-up-command)
+;;       ("u" ivy-scroll-down-command)
+;;       ("e" ivy-scroll-down-command)
+;;       ;; actions
+;;       ("q" keyboard-escape-quit :exit t)
+;;       ("<escape>" keyboard-escape-quit :exit t)
+;;       ("TAB" ivy-alt-done :exit nil)
+;;       ("RET" ivy-done :exit t)
+;;       ("C-SPC" ivy-call-and-recenter :exit nil)
+;;       ("f" ivy-call)
+;;       ("c" ivy-toggle-calling)
+;;       ("m" ivy-toggle-fuzzy)
+;;       ("t" (setq truncate-lines (not truncate-lines)))
+;;       ("o" ivy-occur :exit t))))

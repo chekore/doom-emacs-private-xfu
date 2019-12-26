@@ -1,9 +1,13 @@
 ;;; lang/org-private/autoload/org.el -*- lexical-binding: t; -*-
 
 ;;;###autoload
+(defun +org-move-point-to-heading ()
+        (cond ((org-at-heading-p) (org-beginning-of-line))
+              (t (org-previous-visible-heading 1))))
+;;;###autoload
 (defun export-diary-from-cal ()
   (interactive)
-  (start-process-shell-command "export diary" nil "/Users/xfu/.emacs.d-backup/private/local/calendardiary 30 > /Users/xfu/Dropbox/org/cal.diary"))
+  (start-process-shell-command "export diary" nil "~/.emacs.d-backup/private/local/calendardiary 30 > ~/Dropbox/org/cal.diary"))
 
 ;;;###autoload
 (defun +org/open-brain-here ()
@@ -17,7 +21,6 @@
   (interactive)
   (org-indent-mode 1)
   (recenter-top-bottom))
-
 
 ;;;###autoload
 (defun +org/work-on-heading ()
@@ -92,3 +95,31 @@ with `org-cycle')."
            (unless (outline-invisible-p (line-end-position))
              (org-cycle-hide-drawers 'subtree))
            t))))
+
+;;;###autoload
+(defun +org-private*evil-org-open-below (count)
+  "Clever insertion of org item.
+Argument COUNT number of lines to insert.
+The behavior in items and tables can be controlled using ‘evil-org-special-o/O’.
+Passing in any prefix argument, executes the command without special behavior."
+  (interactive "P")
+  (cond ((and (memq 'table-row evil-org-special-o/O) (org-at-table-p))
+         (org-table-insert-row '(4))
+         (evil-insert nil))
+        ((and (memq 'item evil-org-special-o/O) (org-at-item-p)
+              (progn (org-end-of-item)
+                     (backward-char 1)
+                     (evil-append nil)
+                     (org-insert-item (org-at-item-checkbox-p))))
+         (evil-insert nil))
+        ((evil-open-below count))))
+
+;;;###autoload
+(defun +org-toggle-math ()
+  (interactive)
+  (if (bound-and-true-p org-cdlatex-mode)
+      (org-cdlatex-mode -1)
+    (org-cdlatex-mode +1))
+  (if (bound-and-true-p webkit-katex-render-mode)
+      (webkit-katex-render-mode -1)
+    (webkit-katex-render-mode +1)))

@@ -4,13 +4,13 @@
 (defun =mail ()
   "Activate (or switch to) `notmuch' in its workspace."
   (interactive)
-  (unless (featurep! :feature workspaces)
+  (unless (featurep! :ui workspaces)
     (user-error ":feature workspaces is required, but disabled"))
   (+workspace-switch "mail" t)
   (if-let* ((buf (cl-find-if (lambda (it) (string-match-p "^\\*notmuch" (buffer-name (window-buffer it))))
                              (doom-visible-windows))))
       (select-window (get-buffer-window buf))
-    (notmuch-search "tag:inbox")
+    (notmuch-search "tag:inbox not tag:trash")
     ;; (call-interactively 'notmuch-hello-sidebar)
     )
   (+workspace/display))
@@ -26,12 +26,12 @@
 (defun +mail/buffer-face-mode-notmuch-show ()
   "Sets a fixed width (monospace) font in current buffer"
   (interactive)
-  (setq buffer-face-mode-face '(:family "Charter" :height 1.2))
+  (setq buffer-face-mode-face '(:family "SF Mono" :height 1.2))
   (buffer-face-mode)
   (setq-local line-spacing 0.5))
 
 ;;;###autoload
-(defun +mail/buffer-face-mode-notmuch ()
+(defun +mail/buffer-face-mode-notmuch-search ()
   "Sets a fixed width (monospace) font in current buffer"
   (interactive)
   (let ((buffer-face-mode-face '(:family "Sarasa Mono SC" :height 1.0)))
@@ -39,12 +39,27 @@
     (setq-local line-spacing 0.2)))
 
 ;;;###autoload
+(defun +mail/buffer-face-mode-notmuch-tree ()
+  "Sets a fixed width (monospace) font in current buffer"
+  (interactive)
+  (let ((buffer-face-mode-face '(:family "Sarasa Mono SC" :height 1.0)))
+    (buffer-face-mode)
+    (setq-local line-spacing nil)))
+
+;;;###autoload
 (defun +mail/notmuch-update ()
   (interactive)
-  (start-process-shell-command
-   "notmuch update"
-   nil
-   "cd ~/.mail/account.gmail && gmi push && gmi pull && notmuch new && afew -n -t"))
+  (message "Updating mails...")
+  (when IS-MAC
+    (start-process-shell-command
+     "notmuch update"
+     nil
+     "cd ~/.mail/account.gmail && gmi push && gmi pull && notmuch new && afew -n -t"))
+  (when IS-LINUX
+    (start-process-shell-command
+     "notmuch update"
+     nil
+     "cd ~/.mail/account.gmail && proxychains4 gmi push && proxychains4 gmi pull && notmuch new && afew -n -t")))
 
 
 
@@ -142,6 +157,33 @@
     (when err-file (ignore-errors (delete-file err-file)))))
 
 ;;;###autoload
+(defun notmuch-tree-show-message-in ()
+  "Show the current message (in split-pane)."
+  (interactive)
+  (let ((id (notmuch-tree-get-message-id))
+        (inhibit-read-only t)
+        buffer)
+    (when id
+      ;; We close and reopen the window to kill off un-needed buffers
+      ;; this might cause flickering but seems ok.
+      (notmuch-tree-close-message-window)
+      (setq notmuch-tree-message-window
+            (split-window-horizontally 60))
+      (with-selected-window notmuch-tree-message-window
+        ;; Since we are only displaying one message do not indent.
+        (let ((notmuch-show-indent-messages-width 0)
+              (notmuch-show-only-matching-messages t))
+          (setq buffer (notmuch-show id))))
+      ;; We need the `let' as notmuch-tree-message-window is buffer local.
+      (let ((window notmuch-tree-message-window))
+        (with-current-buffer buffer
+          (setq notmuch-tree-message-window window)
+          (add-hook 'kill-buffer-hook 'notmuch-tree-message-window-kill-hook)))
+      (when notmuch-show-mark-read-tags
+        (notmuch-tree-tag-update-display notmuch-show-mark-read-tags))
+      (setq notmuch-tree-message-buffer buffer))))
+
+;;;###autoload
 (defun +mail/notmuch-show-reuse-buffer (thread-id &optional elide-toggle parent-buffer query-context buffer-name)
   "Run \"notmuch show\" with the given thread ID and display results.
 
@@ -200,8 +242,8 @@ matched."
     (add-hook 'post-command-hook #'notmuch-show-command-hook nil t)
     (jit-lock-register #'notmuch-show-buttonise-links)
     (call-interactively #'+mail/buffer-face-mode-notmuch-show)
-    (let ((fill-column 120))
-      (visual-fill-column-mode))
+    (hide-mode-line-mode 1)
+    (setq header-line-format nil)
     (notmuch-tag-clear-cache)
 
     (let ((inhibit-read-only t))
@@ -215,6 +257,53 @@ matched."
         (ding)
         (message "No messages matched the query!")
         nil))))
+
+;;;###autoload
+(defun notmuch-show--build-buffer (&optional state)
+  "Display messages matching the current buffer context.
+
+Apply the previously saved STATE if supplied, otherwise show the
+first relevant message.
+
+If no messages match the query return NIL."
+  (let* ((cli-args (cons "--exclude=false"
+			 (when notmuch-show-elide-non-matching-messages
+			   (list "--entire-thread=false"))))
+	 (queries (notmuch-show--build-queries
+		   notmuch-show-thread-id notmuch-show-query-context))
+	 (forest nil)
+	 ;; Must be reset every time we are going to start inserting
+	 ;; messages into the buffer.
+	 (notmuch-show-previous-subject ""))
+    ;; Use results from the first query that returns some.
+    (while (and (not forest) queries)
+      (setq forest (notmuch-query-get-threads
+		    (append cli-args (list "'") (car queries) (list "'"))))
+      (setq queries (cdr queries)))
+    (when forest
+      (notmuch-show-insert-forest forest)
+
+      ;; Store the original tags for each message so that we can
+      ;; display changes.
+      (notmuch-show-mapc
+       (lambda () (notmuch-show-set-prop :orig-tags (notmuch-show-get-tags))))
+
+      ;; Set the header line to the subject of the first message.
+      ;; (setq header-line-format
+	  ;;   (replace-regexp-in-string "%" "%%"
+	  ;;   		      (notmuch-sanitize
+	  ;;   		       (notmuch-show-strip-re
+	  ;;   			(notmuch-show-get-subject)))))
+
+      (run-hooks 'notmuch-show-hook)
+
+      (if state
+	  (notmuch-show-apply-state state)
+	;; With no state to apply, just go to the first message.
+	(notmuch-show-goto-first-wanted-message)))
+
+    ;; Report back to the caller whether any messages matched.
+    forest))
 
 ;;;###autoload
 (defun +mail/notmuch-hello-insert-searches (title query-list &rest options)

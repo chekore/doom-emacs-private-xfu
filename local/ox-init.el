@@ -1,9 +1,8 @@
 (require 'ox)
 (require 'ox-beamer)
 
-(setq +org-dir "~/Dropbox/org"
-      +org-attach-dir ".attach/"
-      org-attach-directory (expand-file-name +org-attach-dir +org-dir))
+(setq +org-attach-dir ".attach/"
+      org-attach-directory (expand-file-name +org-attach-dir org-directory))
 (setq org-highlight-latex-and-related '(latex)
       org-latex-logfiles-extensions (quote ("lof" "lot" "tex~" "aux" "idx" "log" "out" "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk" "blg" "brf" "fls" "entoc" "ps" "spl" "bbl"))
       org-latex-packages-alist (quote (("" "color" t)

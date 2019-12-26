@@ -1,4 +1,4 @@
-* Blogs :elfeed:
+* Feeds :elfeed:
   :PROPERTIES:
   :ID:       FDB20BAB-9C5D-4A12-A7B1-8EF067B3969E
   :END:
@@ -14,10 +14,6 @@
     :PROPERTIES:
     :ID:       7A18DBE9-F56A-459E-9110-4AA1C054CAB9
     :END:
-*** [[http://irreal.org/blog/?feed=rss2][Irreal]]
-    :PROPERTIES:
-    :ID:       9930C3CB-D52C-495E-977D-F7D6784DD2FB
-    :END:
 *** [[https://www.reddit.com/r/emacs/.rss][r/M-x Emacs]]
     :PROPERTIES:
     :ID:       29C05341-9540-4D83-9EED-5127C4FD10FC
@@ -30,10 +26,6 @@
     :PROPERTIES:
     :ID:       6DAC16E7-B570-4EF2-B033-A290887DF3D8
     :END:
-*** [[https://bitbucket.org/mituharu/emacs-mac/rss][Emacs-mac]]
-:PROPERTIES:
-:ID:       4005637C-2C8E-4991-8F28-52F7E34E8CE4
-:END:
 ** Literature :literature:
    :PROPERTIES:
    :ID:       6F8AE594-DF73-4A71-BDB9-073D12253A89
@@ -106,13 +98,3 @@
    :PROPERTIES:
    :ID:       12968406-5EC2-4220-938F-670FD2352FF4
    :END:
-*** TODO [[http://jef.works/feed.xml][Jean Fan's blog]]
-    :PROPERTIES:
-    :ID:       82C9B16B-143B-4BDF-AB8B-ED55F86B3D56
-    :END:
-    :LOGBOOK:
-    - State "TODO"       from              [2018-01-11 Thu 14:50]
-    :END:
-
-    
-    

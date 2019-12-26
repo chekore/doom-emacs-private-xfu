@@ -8,9 +8,13 @@ notes in ~org-mode~.
 * Getting start
 In ~.doom.d/config.el~
 #+BEGIN_SRC elisp
-(setq bibtex-completion-bibliography "~/Dropbox/org/reference/Bibliography.bib" ;the major bibtex file
+(setq bibtex-completion-bibliography '( "~/Dropbox/org/reference/Bibliography.bib" ) ;the major bibtex file
       bibtex-completion-library-path "~/Dropbox/org/reference/pdf/" ;the directory to store pdfs
       bibtex-completion-notes-path "~/Dropbox/org/ref.org" ;the note file for reference notes
+      ;; org-directory "~/Dropbox/org"
+      org-ref-default-bibliography '( "~/Dropbox/org/reference/Bibliography.bib" )
+      org-ref-bibliography-notes "~/Dropbox/org/ref.org"
+      org-ref-pdf-directory "~/Dropbox/org/reference/pdf/"
       )
 #+END_SRC
 
@@ -20,7 +24,7 @@ I got the paper from two sources.
 1. ~Elfeed~. I subscribed some journal's (and also bioRxiv's) RSS. And I scan
    through the title, once I found something interesting I check it's abstract
    (usually in RSS content). If it's really interesting, I press <kbd>RET</kbd>
-   ~+reference/elfeed-add~. Which will automatically download that paper's
+   ~org-ref-elfeed-add~. Which will automatically download that paper's
    bibtex and PDF (if it can handle the journal) and add it to the ivy-bibtex libraray.
 2. Second source is manually searching, after searching I will copy the doi of
    that paper and use ~doi-utils-add-bibtex-entry-from-doi~ to save the bibtex
